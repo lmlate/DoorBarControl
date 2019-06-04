@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">门杠识别</string>
+    <string name="start_process">开始处理</string>
+    <string name="processing">处理中</string>
+    <string name="permission_denied">权限被拒绝！</string>
+    <string name="active_engine">激活引擎</string>
+    <string name="active_success">激活引擎成功</string>
+    <string name="already_activated">引擎已激活，无需再次激活</string>
+    <string name="active_failed">引擎激活失败，错误码为 %d</string>
+    <string name="init_failed">引擎初始化失败，错误码为 %d</string>
+    <string name="engine_not_initialized">引擎未初始化，错误码为 %d</string>
+    <string name="notice_choose_main_img">请先选择主图</string>
+    <string name="compare_failed">比对失败，错误码为 %d</string>
+    <string name="register">注册</string>
+    <string name="live_detection">活体检测</string>
+    <string name="registering_please_wait">注册中，请稍等</string>
+    <string name="clear_faces">清空人脸库</string>
+    <string name="no_face_need_to_delete">无人脸需要删除</string>
+    <string name="ok">确认</string>
+    <string name="cancel">取消</string>
+</resources>

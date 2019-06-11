@@ -616,7 +616,6 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
                             faceHelper.addName(requestId, "VISITOR " + requestId);
                         }
                     }
-
                     @Override
                     public void onError(Throwable e) {
                         requestFeatureStatusMap.put(requestId, RequestFeatureStatus.FAILED);

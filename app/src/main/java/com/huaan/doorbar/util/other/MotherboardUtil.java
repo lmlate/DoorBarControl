@@ -15,7 +15,7 @@ public class MotherboardUtil {
     private static final int SLEEP_TIME = 3000;
 
     public static void init(Context context) {
-        gpioManager= GPIOManager.getInstance(context);
+        gpioManager = GPIOManager.getInstance(context);
     }
 
     public static void Failure() {
@@ -42,13 +42,22 @@ public class MotherboardUtil {
 //        gpioManager.pullDownRelay();
     }
 
+    public static void FillLight() {
+        pullDownLight();
+        gpioManager.pullUpWhiteLight();
+        try {
+            Thread.sleep(SLEEP_TIME);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        gpioManager.pullDownWhiteLight();
+    }
+
     public static void pullDownLight() {
         gpioManager.pullDownRedLight();
         gpioManager.pullDownGreenLight();
         gpioManager.pullDownWhiteLight();
     }
-
-
 
 
 }

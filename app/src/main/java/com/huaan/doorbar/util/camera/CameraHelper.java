@@ -101,6 +101,7 @@ public class CameraHelper implements Camera.PreviewCallback {
 
     }
 
+
     private SharedPreferences mSharedPreferences = App.getInstance().getSharedPreferences("faceDetail", Context.MODE_PRIVATE);
 
     public void start() {

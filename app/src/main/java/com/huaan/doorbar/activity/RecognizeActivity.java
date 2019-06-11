@@ -236,6 +236,7 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
                 mSeekBar.setVisibility(View.INVISIBLE);
             }
         }), 10000);
+
     }
 
     /**
@@ -611,6 +612,11 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
                             }
                             requestFeatureStatusMap.put(requestId, RequestFeatureStatus.SUCCEED);
                             faceHelper.addName(requestId, compareResult.getUserName());
+                        } else if (compareResult.getSimilar() > 0.5F) {
+                            requestFeatureStatusMap.put(requestId, RequestFeatureStatus.FAILED);
+                            faceHelper.addName(requestId, "VISITOR " + requestId);
+                            //补光增加辨识度
+                            new Thread(MotherboardUtil::FillLight).start();
                         } else {
                             requestFeatureStatusMap.put(requestId, RequestFeatureStatus.FAILED);
                             faceHelper.addName(requestId, "VISITOR " + requestId);

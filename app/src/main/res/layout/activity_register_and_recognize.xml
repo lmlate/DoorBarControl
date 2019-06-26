@@ -14,16 +14,12 @@
            android:layout_width="match_parent"
            android:layout_height="match_parent" />
 
-       <com.huaan.doorbar.ui.FaceRectView
+       <com.huaan.doorbar.widget.FaceRectView
            android:id="@+id/face_rect_view"
            android:layout_width="match_parent"
            android:layout_height="match_parent" />
-   </FrameLayout>
 
-    <android.support.v7.widget.RecyclerView
-        android:id="@+id/recycler_view_person"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+   </FrameLayout>
 
     <SeekBar
         android:layout_marginBottom="100dp"
@@ -32,5 +28,13 @@
         android:layout_gravity="bottom"
         android:layout_width="match_parent"
         android:layout_height="50dp" />
+
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/recycler_view_person"
+        android:layout_marginTop="900dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_width="600dp"
+        android:layout_height="300dp" />
 
 </FrameLayout>

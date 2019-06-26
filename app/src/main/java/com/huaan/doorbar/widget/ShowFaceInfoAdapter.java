@@ -1,4 +1,4 @@
-package com.huaan.doorbar.ui;
+package com.huaan.doorbar.widget;
 
 import android.content.Context;
 import android.support.annotation.NonNull;

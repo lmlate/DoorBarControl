@@ -22,7 +22,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
-import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.DisplayMetrics;
 import android.view.View;
@@ -40,14 +40,13 @@ import com.arcsoft.face.VersionInfo;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.huaan.doorbar.R;
+import com.huaan.doorbar.common.Constants;
 import com.huaan.doorbar.faceserver.CompareResult;
 import com.huaan.doorbar.faceserver.FaceServer;
 import com.huaan.doorbar.model.DrawInfo;
 import com.huaan.doorbar.model.FacePreviewInfo;
 import com.huaan.doorbar.model.PeopleFaceInfo;
 import com.huaan.doorbar.net.OkUtils;
-import com.huaan.doorbar.ui.FaceRectView;
-import com.huaan.doorbar.ui.ShowFaceInfoAdapter;
 import com.huaan.doorbar.util.ConfigUtil;
 import com.huaan.doorbar.util.DrawHelper;
 import com.huaan.doorbar.util.ImageUtil;
@@ -58,6 +57,8 @@ import com.huaan.doorbar.util.face.FaceListener;
 import com.huaan.doorbar.util.face.RequestFeatureStatus;
 import com.huaan.doorbar.util.other.MotherboardUtil;
 import com.huaan.doorbar.util.other.MyToast;
+import com.huaan.doorbar.widget.FaceRectView;
+import com.huaan.doorbar.widget.ShowFaceInfoAdapter;
 import com.orhanobut.logger.Logger;
 
 import java.io.File;
@@ -201,8 +202,7 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
         adapter = new ShowFaceInfoAdapter(compareResultList, this);
         recyclerShowFaceInfo.setAdapter(adapter);
         DisplayMetrics dm = getResources().getDisplayMetrics();
-        int spanCount = (int) (dm.widthPixels / (getResources().getDisplayMetrics().density * 100 + 0.5f));
-        recyclerShowFaceInfo.setLayoutManager(new GridLayoutManager(this, spanCount));
+        recyclerShowFaceInfo.setLayoutManager(new LinearLayoutManager(this));
         recyclerShowFaceInfo.setItemAnimator(new DefaultItemAnimator());
 
 //        progressDialog = new ProgressDialog(this);
@@ -375,7 +375,7 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
                     //活体检测失败
                     else {
                         requestFeatureStatusMap.put(requestId, RequestFeatureStatus.NOT_ALIVE);
-                        runOnUiThread(() -> MyToast.showToast(mContext, "未检测到活体"));
+//                        runOnUiThread(() -> MyToast.showToast(mContext, "未检测到活体"));
 //                        MotherboardUtil.Failure();
                     }
 
@@ -418,7 +418,8 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
                     List<DrawInfo> drawInfoList = new ArrayList<>();
                     for (int i = 0; i < facePreviewInfoList.size(); i++) {
                         String name = faceHelper.getName(facePreviewInfoList.get(i).getTrackId());
-                        drawInfoList.add(new DrawInfo(facePreviewInfoList.get(i).getFaceInfo().getRect(), GenderInfo.UNKNOWN, AgeInfo.UNKNOWN_AGE, LivenessInfo.UNKNOWN, name == null ? String.valueOf(facePreviewInfoList.get(i).getTrackId()) : name));
+//                        drawInfoList.add(new DrawInfo(facePreviewInfoList.get(i).getFaceInfo().getRect(), GenderInfo.UNKNOWN, AgeInfo.UNKNOWN_AGE, LivenessInfo.UNKNOWN, name == null ? String.valueOf(facePreviewInfoList.get(i).getTrackId()) : name));
+                        drawInfoList.add(new DrawInfo(facePreviewInfoList.get(i).getFaceInfo().getRect(), GenderInfo.UNKNOWN, AgeInfo.UNKNOWN_AGE, LivenessInfo.UNKNOWN, ""));
                     }
                     drawHelper.draw(faceRectView, drawInfoList);
                 }
@@ -568,23 +569,23 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
                         Logger.i("onNext: fr search get result  = " + System.currentTimeMillis() + " trackId = " + requestId + "  similar = " + compareResult.getSimilar());
                         if (compareResult.getSimilar() > SIMILAR_THRESHOLD) {
 
-                            //认证成功 回调请求
-                            String id = mSharedPreferences.getString(compareResult.getUserName(), "");
-                            Map map = new HashMap();
-                            map.put("userId", id);
-                            OkUtils.UploadSJ("http://10.128.4.109:8088/entranceGuard/faceAuthentication", map, new Callback() {
-                                @Override
-                                public void onFailure(Call call, IOException e) {
-                                    Logger.e("回调失败");
+                                //认证成功 回调请求
+                                String id = mSharedPreferences.getString(compareResult.getUserName(), "");
+                                Map map = new HashMap();
+                                map.put("userId", id);
+                                OkUtils.UploadSJ(Constants.UP_LOAD_URL, map, new Callback() {
+                                    @Override
+                                    public void onFailure(Call call, IOException e) {
+                                        Logger.e("回调失败");
 
-                                }
+                                    }
+                                    @Override
+                                    public void onResponse(Call call, Response response) throws IOException {
+                                        Logger.e("回调成功");
+                                        //MotherboardUtil.Succeed();
+                                    }
+                                });
 
-                                @Override
-                                public void onResponse(Call call, Response response) throws IOException {
-                                    Logger.e("回调成功");
-                                    MotherboardUtil.Succeed();
-                                }
-                            });
 
 
                             boolean isAdded = false;
@@ -616,7 +617,7 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
                             requestFeatureStatusMap.put(requestId, RequestFeatureStatus.FAILED);
                             faceHelper.addName(requestId, "VISITOR " + requestId);
                             //补光增加辨识度
-                            new Thread(MotherboardUtil::FillLight).start();
+//                            new Thread(MotherboardUtil::FillLight).start();
                         } else {
                             requestFeatureStatusMap.put(requestId, RequestFeatureStatus.FAILED);
                             faceHelper.addName(requestId, "VISITOR " + requestId);
@@ -661,7 +662,7 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
     private List<PeopleFaceInfo> mInfoList = new ArrayList<>();
 
     private void downLoad() {
-        Request request = new Request.Builder().url("http://115.159.154.194/warehouse/face/peopleFaceInfo").build();
+        Request request = new Request.Builder().url(Constants.IMG_SEARCH_URL).build();
         OkUtils.getInstance().newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
@@ -690,7 +691,7 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
                                 final String faceImage = mInfoList.get(i).getFaceImage();
                                 final String name = mInfoList.get(i).getName();
                                 final String id = mInfoList.get(i).getId();
-                                OkUtils.download("http://115.159.154.194/warehouse/images/" + faceImage, name + ".jpg", REGISTER_DIR, new OkUtils.OnDownloadListener() {
+                                OkUtils.download(Constants.IMG_DOWNLOAD_URL + faceImage, name + ".jpg", REGISTER_DIR, new OkUtils.OnDownloadListener() {
                                     @Override
                                     public void onDownloadSuccess() {
                                         Logger.e("下载成功" + name);

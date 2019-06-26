@@ -10,7 +10,7 @@ import com.arcsoft.face.AgeInfo;
 import com.arcsoft.face.GenderInfo;
 import com.arcsoft.face.LivenessInfo;
 import com.huaan.doorbar.model.DrawInfo;
-import com.huaan.doorbar.ui.FaceRectView;
+import com.huaan.doorbar.widget.FaceRectView;
 
 import java.util.List;
 

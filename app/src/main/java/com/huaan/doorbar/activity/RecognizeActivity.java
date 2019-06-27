@@ -141,7 +141,7 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
     /**
      * 识别度
      */
-    private static final float SIMILAR_THRESHOLD = 0.8F;
+    private static final float SIMILAR_THRESHOLD = Constants.FACE_SIMILAR_THRESHOLD;
     /**
      * 所需的所有权限信息
      */
@@ -160,13 +160,14 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
      * 定时下载
      */
     private Timer mTimer;
-    private static final long PERIOD_DAY = 24 * 60 * 60 * 1000;
 
     /**
      * 焦距调节
      */
     private SeekBar mSeekBar;
     private boolean mIsDoIt = false;//隐藏条件
+    //应下载的图片数量
+    private int mDownLoadImgSize;
 
 
     @Override
@@ -228,14 +229,14 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                new Handler().postDelayed(() -> runOnUiThread(() -> mSeekBar.setVisibility(View.INVISIBLE)), 10000);
+                new Handler().postDelayed(() -> runOnUiThread(() -> mSeekBar.setVisibility(View.INVISIBLE)), Constants.DELAY_ADJUST_FOCUS_TIME);
             }
         });
         new Handler().postDelayed(() -> runOnUiThread(() -> {
             if (!mIsDoIt) {
                 mSeekBar.setVisibility(View.INVISIBLE);
             }
-        }), 10000);
+        }), Constants.DELAY_ADJUST_FOCUS_TIME);
 
     }
 
@@ -245,9 +246,9 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
     private void downLoadTask() {
         mTimer = new Timer();
         Calendar calendar = Calendar.getInstance();
-        calendar.set(Calendar.HOUR_OF_DAY, 1); //凌晨1点
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.HOUR_OF_DAY, Constants.UPDATE_TIME_HOUR); //凌晨1点
+        calendar.set(Calendar.MINUTE, Constants.UPDATE_TIME_MINUTE);
+        calendar.set(Calendar.SECOND, Constants.UPDATE_TIME_SECOND);
         Date date = calendar.getTime();
         //如果第一次执行定时任务的时间 小于当前的时间，此时添加一天
         if (date.before(new Date())) {
@@ -258,7 +259,7 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
             public void run() {
                 runOnUiThread(() -> downLoad());
             }
-        }, date, PERIOD_DAY);
+        }, date, Constants.PERIOD_UPDATE_DAY);
     }
 
     /**
@@ -679,14 +680,14 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
                     runOnUiThread(() -> {
                         clearLocalPicture();//开始下载前清空本地照片
                         mEditor = mSharedPreferences.edit();
-                        int size = mInfoList.size();
-                        for (int i = 0; i <= size; i++) {
-                            if (size == i) {
+                        mDownLoadImgSize = mInfoList.size();
+                        for (int i = 0; i <= mDownLoadImgSize; i++) {
+                            if (mDownLoadImgSize == i) {
                                 new Handler().postDelayed(() -> {
                                     mEditor.apply();
                                     clearFaces();
                                     doRegister();
-                                }, 10000);
+                                }, Constants.DELAY_REGISTER_TIME);
                             } else {
                                 final String faceImage = mInfoList.get(i).getFaceImage();
                                 final String name = mInfoList.get(i).getName();
@@ -738,7 +739,9 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
         final File[] jpgFiles = dir.listFiles((dir1, name) -> name.endsWith(FaceServer.IMG_SUFFIX));
         executorService.execute(() -> {
             final int totalCount = jpgFiles.length;
-
+            if (totalCount != mDownLoadImgSize) {
+                MyToast.showLongToast(mContext, "已下载数量:" + totalCount + "\n应下载数量:" + mDownLoadImgSize + "\n请联系管理员核对！");
+            }
             int successCount = 0;
 //               runOnUiThread(()->{
 //                   progressDialog.setMaxProgress(totalCount);

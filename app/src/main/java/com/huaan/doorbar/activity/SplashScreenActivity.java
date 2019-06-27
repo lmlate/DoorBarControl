@@ -3,6 +3,7 @@ package com.huaan.doorbar.activity;
 import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -41,6 +42,8 @@ public class SplashScreenActivity extends AppCompatActivity {
     private static final String[] NEEDED_PERMISSIONS = new String[]{
             Manifest.permission.READ_PHONE_STATE
     };
+    private SharedPreferences mSharedPreferences;
+    private SharedPreferences.Editor mEditor;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -49,13 +52,20 @@ public class SplashScreenActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash_screen);
         ConfigUtil.setFtOrient(this, FaceEngine.ASF_OP_90_ONLY);//识别角度90°,FaceEngine.ASF_OP_0_HIGHER_EXT全方向识别
-        activeEngine();
+        mSharedPreferences = getSharedPreferences("faceDetail", MODE_PRIVATE);
+        boolean isRegistered = mSharedPreferences.getBoolean("IsRegistered", false);
+        if (!isRegistered) {
+            activeEngine();
+            new Handler().postDelayed(() -> {
+                Intent intent = new Intent(mContext, RecognizeActivity.class);
+                startActivity(intent);
+                finish();
+            }, 100);
+        } else {
+                startActivity(new Intent(mContext, RecognizeActivity.class));
+                finish();
+        }
 
-        new Handler().postDelayed(() -> {
-            Intent intent = new Intent(mContext, RecognizeActivity.class);
-            startActivity(intent);
-            finish();
-        }, 100);
     }
 
     /**
@@ -82,11 +92,15 @@ public class SplashScreenActivity extends AppCompatActivity {
                     @Override
                     public void onNext(Integer activeCode) {
                         if (activeCode == ErrorInfo.MOK) {
-                            MyToast.showToast(mContext,getString(R.string.active_success));
+                            MyToast.showToast(mContext, getString(R.string.active_success));
+                            mEditor = mSharedPreferences.edit();
+                            mEditor.putBoolean("IsRegistered", true).apply();
                         } else if (activeCode == ErrorInfo.MERR_ASF_ALREADY_ACTIVATED) {
-                            MyToast.showToast(mContext,getString(R.string.already_activated));
+                            MyToast.showToast(mContext, getString(R.string.already_activated));
+                            mEditor = mSharedPreferences.edit();
+                            mEditor.putBoolean("IsRegistered", true).apply();
                         } else {
-                            MyToast.showToast(mContext,getString(R.string.active_failed, activeCode));
+                            MyToast.showToast(mContext, getString(R.string.active_failed, activeCode));
                         }
                     }
 
@@ -125,7 +139,7 @@ public class SplashScreenActivity extends AppCompatActivity {
             if (isAllGranted) {
                 activeEngine();
             } else {
-               MyToast.showToast(mContext,getString(R.string.permission_denied));
+                MyToast.showToast(mContext, getString(R.string.permission_denied));
             }
         }
     }
@@ -137,7 +151,5 @@ public class SplashScreenActivity extends AppCompatActivity {
         }
         return super.onKeyDown(keyCode, event);
     }
-
-    
 
 }

@@ -37,6 +37,7 @@ import com.arcsoft.face.FaceFeature;
 import com.arcsoft.face.GenderInfo;
 import com.arcsoft.face.LivenessInfo;
 import com.arcsoft.face.VersionInfo;
+import com.arcsoft.face.util.ImageUtils;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.huaan.doorbar.R;
@@ -413,7 +414,7 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
                     faceRectView.clearFaceInfo();
                 }
 
-                List<FacePreviewInfo> facePreviewInfoList = faceHelper.onPreviewFrame(nv21, mContext);//多人警告，暂不拒绝
+                List<FacePreviewInfo> facePreviewInfoList = faceHelper.onPreviewFrame(nv21, mContext);//多人警告，会拒绝
 
                 if (facePreviewInfoList != null && faceRectView != null && drawHelper != null) {
                     List<DrawInfo> drawInfoList = new ArrayList<>();
@@ -773,9 +774,9 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
                     jpgFile.renameTo(failedFile);
                     continue;
                 }
-                byte[] nv21 = ImageUtil.bitmapToNv21(bitmap, bitmap.getWidth(), bitmap.getHeight());
-                boolean success = FaceServer.getInstance().register(mContext, nv21, bitmap.getWidth(), bitmap.getHeight()
-                        , jpgFile.getName().substring(0, jpgFile.getName().lastIndexOf(".")));
+                byte[] bgr24 = ImageUtils.bitmapToBgr24(bitmap);
+                boolean success = FaceServer.getInstance().registerBgr24(mContext, bgr24, bitmap.getWidth(), bitmap.getHeight(),
+                        jpgFile.getName().substring(0, jpgFile.getName().lastIndexOf(".")));
                 if (!success) {
                     File failedFile = new File(REGISTER_FAILED_DIR + File.separator + jpgFile.getName());
                     if (!failedFile.getParentFile().exists()) {

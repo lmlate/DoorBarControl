@@ -1,6 +1,7 @@
 package com.huaan.doorbar.widget;
 
 import android.content.Context;
+import android.icu.math.BigDecimal;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -48,7 +49,10 @@ public class ShowFaceInfoAdapter extends RecyclerView.Adapter<ShowFaceInfoAdapte
                 .load(imgFile)
                 .centerCrop()
                 .into(holder.imageView);
-        holder.textView.setText(compareResultList.get(position).getUserName());
+        float similar = compareResultList.get(position).getSimilar();
+        BigDecimal b = new BigDecimal(similar);
+        similar = b.setScale(2,BigDecimal.ROUND_HALF_UP).floatValue();
+        holder.textView.setText(compareResultList.get(position).getUserName()+"--"+similar);
     }
 
     @Override

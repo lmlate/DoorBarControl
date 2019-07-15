@@ -37,7 +37,6 @@ import com.arcsoft.face.FaceFeature;
 import com.arcsoft.face.GenderInfo;
 import com.arcsoft.face.LivenessInfo;
 import com.arcsoft.face.VersionInfo;
-import com.arcsoft.face.util.ImageUtils;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.huaan.doorbar.R;
@@ -89,15 +88,13 @@ import okhttp3.Callback;
 import okhttp3.Request;
 import okhttp3.Response;
 
-import static com.huaan.doorbar.util.other.MotherboardUtil.pullDownLight;
-
 @RequiresApi(api = Build.VERSION_CODES.N)
 public class RecognizeActivity extends AppCompatActivity implements ViewTreeObserver.OnGlobalLayoutListener {
 
     /**
      * 最大检测人数
      */
-    private static final int MAX_DETECT_NUM = 5;
+    private static final int MAX_DETECT_NUM = 3;
     /**
      * 当FR成功，活体未成功时，FR等待活体的时间
      */
@@ -332,7 +329,7 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
 //        }
         //-------------------------------//
         FaceServer.getInstance().unInit();
-        pullDownLight();
+        MotherboardUtil.pullDownLight();
         super.onDestroy();
     }
 
@@ -568,7 +565,7 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
                             return;
                         }
 
-                        Logger.i("onNext: fr search get result  = " + System.currentTimeMillis() + " trackId = " + requestId + "  similar = " + compareResult.getSimilar());
+                        Logger.e("onNext: fr search get result  = " + System.currentTimeMillis() + " trackId = " + requestId + "  similar = " + compareResult.getSimilar());
                         if (compareResult.getSimilar() > SIMILAR_THRESHOLD) {
 
                                 //认证成功 回调请求
@@ -656,8 +653,6 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
     private static final String REGISTER_DIR = ROOT_DIR + File.separator + "register";
     private static final String REGISTER_FAILED_DIR = ROOT_DIR + File.separator + "failed";
 
-    private boolean flag = false;
-
     /**
      * 下载图片
      */
@@ -668,7 +663,10 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
         OkUtils.getInstance().newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
-                runOnUiThread(() -> MyToast.showToast(mContext, "网络未连接"));
+                runOnUiThread(() -> {
+                    MyToast.showToast(mContext, "网络未连接");
+                    doRegister();
+                });
             }
 
             @Override
@@ -679,7 +677,7 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
                     mInfoList = gson.fromJson(body, new TypeToken<List<PeopleFaceInfo>>() {
                     }.getType());
                     runOnUiThread(() -> {
-                        clearLocalPicture();//开始下载前清空本地照片
+//                        clearLocalPicture();//开始下载前清空本地照片
                         mEditor = mSharedPreferences.edit();
                         mDownLoadImgSize = mInfoList.size();
                         for (int i = 0; i <= mDownLoadImgSize; i++) {
@@ -728,7 +726,6 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
      */
     private void doRegister() {
         File dir = new File(REGISTER_DIR);
-        MediaScannerConnection.scanFile(mContext, new String[]{dir.getAbsolutePath()}, null, null);
         if (!dir.exists()) {
             MyToast.showToast(this, REGISTER_DIR + "该目录不存在");
             return;
@@ -774,8 +771,8 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
                     jpgFile.renameTo(failedFile);
                     continue;
                 }
-                byte[] bgr24 = ImageUtils.bitmapToBgr24(bitmap);
-                boolean success = FaceServer.getInstance().registerBgr24(mContext, bgr24, bitmap.getWidth(), bitmap.getHeight(),
+                byte[] nv21 = ImageUtil.bitmapToNv21(bitmap, bitmap.getWidth(), bitmap.getHeight());
+                boolean success = FaceServer.getInstance().register(this, nv21, bitmap.getWidth(), bitmap.getHeight(),
                         jpgFile.getName().substring(0, jpgFile.getName().lastIndexOf(".")));
                 if (!success) {
                     File failedFile = new File(REGISTER_FAILED_DIR + File.separator + jpgFile.getName());
@@ -797,6 +794,8 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
             });
             Logger.i("注册成功 " + executorService.isShutdown());
         });
+        //刷新缓存
+        MediaScannerConnection.scanFile(mContext, new String[]{dir.getAbsolutePath()}, null, null);
     }
 
     /**
@@ -837,6 +836,5 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
             file.delete();
         }
     }
-
 
 }

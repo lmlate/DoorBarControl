@@ -6,7 +6,7 @@ public interface Constants {
 
     String IMG_SEARCH_URL = "http://10.128.4.152:8080/warehouse/face/peopleFaceInfo";
     String IMG_DOWNLOAD_URL = "http://10.128.4.152:8080/warehouse/images/";
-    String UP_LOAD_URL = "http://10.128.4.152:8080/entranceGuard/faceAuthentication";
+    String UP_LOAD_URL = "http://10.128.4.152:8080/warehouse/entranceGuard/faceAuthentication";
 
     int DELAY_REGISTER_TIME = 5000;
     int DELAY_ADJUST_FOCUS_TIME = 5000;
@@ -16,7 +16,7 @@ public interface Constants {
     int UPDATE_TIME_MINUTE = 0;
     int UPDATE_TIME_SECOND = 0;
 
-    float FACE_SIMILAR_THRESHOLD = 0.8F;//识别度
+    float FACE_SIMILAR_THRESHOLD = 0.75F;//识别度
 
 }
 

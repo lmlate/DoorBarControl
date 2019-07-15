@@ -117,10 +117,13 @@ public class FaceHelper {
                 } else {
                     Log.i(TAG, "onPreviewFrame: ft costTime = " + (System.currentTimeMillis() - ftStartTime) + "ms");
                     if (faceInfoList.size() > 1) {
-                        MyToast.showLongToast(context, "请勿并排走");
+                        MyToast.showBigToast(context, " 请 勿 并 排 走 !");
                         new Thread(MotherboardUtil::Failure).start();
                         facePreviewInfoList.clear();
                         return facePreviewInfoList;
+                    } else {
+                        MyToast.cancelToast();
+                        MotherboardUtil.pullDownLight();
                     }
                 }
                 /*

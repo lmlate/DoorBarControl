@@ -1,22 +1,50 @@
 package com.huaan.doorbar.common;
 
-public interface Constants {
-    String APP_ID = "C4H8atN7VHaNGWc8oVyFkswQznPG2BeS2fVVAyDHBcta";
-    String SDK_KEY = "HbsmwUgBVizSZkw4AND3zuPnLvJrFNF7RYmwAfHDihdf";
+import android.content.Context;
+import android.content.SharedPreferences;
 
-    String IMG_SEARCH_URL = "http://10.128.4.152:8080/warehouse/face/peopleFaceInfo";
-    String IMG_DOWNLOAD_URL = "http://10.128.4.152:8080/warehouse/images/";
-    String UP_LOAD_URL = "http://10.128.4.152:8080/warehouse/entranceGuard/faceAuthentication";
+public class Constants {
+    public static final String AppSetting = "AppSetting";
+    public static final String APP_ID = "C4H8atN7VHaNGWc8oVyFkswQznPG2BeS2fVVAyDHBcta";
+    public static final String SDK_KEY = "HbsmwUgBVizSZkw4AND3zuPnLvJrFNF7RYmwAfHDihdf";
 
-    int DELAY_REGISTER_TIME = 5000;
-    int DELAY_ADJUST_FOCUS_TIME = 5000;
+    private static String IP = "10.128.4.152";
 
-    long PERIOD_UPDATE_DAY = 24 * 60 * 60 * 1000;
-    int UPDATE_TIME_HOUR = 1;//凌晨一点
-    int UPDATE_TIME_MINUTE = 0;
-    int UPDATE_TIME_SECOND = 0;
+    public static String IMG_SEARCH_URL = "http://" + IP + "/warehouse/face/peopleFaceInfo";
+    public static String IMG_DOWNLOAD_URL = "http://" + IP + "/warehouse/images/";
+    public static String UP_LOAD_URL = "http://" + IP + "/warehouse/entranceGuard/faceAuthentication";
 
-    float FACE_SIMILAR_THRESHOLD = 0.75F;//识别度
+    private static float SIMILAR_THRESHOLD = 0.75f;
 
+    public static final int DELAY_REGISTER_TIME = 5000;
+
+
+    public static void setFaceSimilar(Context context, float value) {
+        if (context == null) {
+            return;
+        }
+        SharedPreferences sharedPreferences = context.getSharedPreferences(AppSetting, Context.MODE_PRIVATE);
+        sharedPreferences.edit().putFloat("face_similar_threshold", value).apply();
+        SIMILAR_THRESHOLD = value;
+    }
+
+    public static float getFaceSimilar(Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(AppSetting, Context.MODE_PRIVATE);
+        return sharedPreferences.getFloat("face_similar_threshold", SIMILAR_THRESHOLD);
+    }
+
+    public static void setServerIp(Context context, String value) {
+        if (context == null) {
+            return;
+        }
+        SharedPreferences sharedPreferences = context.getSharedPreferences(AppSetting, Context.MODE_PRIVATE);
+        sharedPreferences.edit().putString("server_ip", value).apply();
+        IP = value;
+    }
+
+    public static String getServerIp(Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(AppSetting, Context.MODE_PRIVATE);
+        return sharedPreferences.getString("server_ip", IP);
+    }
 }
 

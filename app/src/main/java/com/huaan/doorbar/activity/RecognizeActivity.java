@@ -9,7 +9,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Point;
 import android.hardware.Camera;
-import android.icu.util.Calendar;
 import android.media.MediaScannerConnection;
 import android.os.Build;
 import android.os.Bundle;
@@ -28,7 +27,6 @@ import android.util.DisplayMetrics;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.WindowManager;
-import android.widget.SeekBar;
 
 import com.arcsoft.face.AgeInfo;
 import com.arcsoft.face.ErrorInfo;
@@ -64,13 +62,10 @@ import com.orhanobut.logger.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -139,7 +134,7 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
     /**
      * 识别度
      */
-    private static final float SIMILAR_THRESHOLD = Constants.FACE_SIMILAR_THRESHOLD;
+    private final float SIMILAR_THRESHOLD = Constants.getFaceSimilar(this);
     /**
      * 所需的所有权限信息
      */
@@ -154,16 +149,6 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
 
     private Context mContext = RecognizeActivity.this;
 
-    /**
-     * 定时下载
-     */
-    private Timer mTimer;
-
-    /**
-     * 焦距调节
-     */
-    private SeekBar mSeekBar;
-    private boolean mIsDoIt = false;//隐藏条件
     //应下载的图片数量
     private int mDownLoadImgSize;
 
@@ -200,74 +185,14 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
         compareResultList = new ArrayList<>();
         adapter = new ShowFaceInfoAdapter(compareResultList, this);
         recyclerShowFaceInfo.setAdapter(adapter);
-        DisplayMetrics dm = getResources().getDisplayMetrics();
         recyclerShowFaceInfo.setLayoutManager(new LinearLayoutManager(this));
         recyclerShowFaceInfo.setItemAnimator(new DefaultItemAnimator());
 
-//        progressDialog = new ProgressDialog(this);
-        mSharedPreferences = getSharedPreferences("faceDetail", Context.MODE_PRIVATE);
+        //progressDialog = new ProgressDialog(this);
+        mSharedPreferences = getSharedPreferences(Constants.AppSetting, Context.MODE_PRIVATE);
+//        cameraHelper.setZoom(mSharedPreferences.getInt("focal_length", 0));
         downLoad();
-        downLoadTask();
 
-
-        mSeekBar = findViewById(R.id.focal_length);
-        int focal_length = mSharedPreferences.getInt("focal_length", 0);
-        mSeekBar.setProgress(focal_length);
-        mSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                cameraHelper.setZoom(progress);
-                mEditor.putInt("focal_length", progress).apply();
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-                mIsDoIt = true;
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                new Handler().postDelayed(() -> runOnUiThread(() -> mSeekBar.setVisibility(View.INVISIBLE)), Constants.DELAY_ADJUST_FOCUS_TIME);
-            }
-        });
-        new Handler().postDelayed(() -> runOnUiThread(() -> {
-            if (!mIsDoIt) {
-                mSeekBar.setVisibility(View.INVISIBLE);
-            }
-        }), Constants.DELAY_ADJUST_FOCUS_TIME);
-
-    }
-
-    /**
-     * 定时任务
-     */
-    private void downLoadTask() {
-        mTimer = new Timer();
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(Calendar.HOUR_OF_DAY, Constants.UPDATE_TIME_HOUR); //凌晨1点
-        calendar.set(Calendar.MINUTE, Constants.UPDATE_TIME_MINUTE);
-        calendar.set(Calendar.SECOND, Constants.UPDATE_TIME_SECOND);
-        Date date = calendar.getTime();
-        //如果第一次执行定时任务的时间 小于当前的时间，此时添加一天
-        if (date.before(new Date())) {
-            date = this.addDay(date, 1);
-        }
-        mTimer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                runOnUiThread(() -> downLoad());
-            }
-        }, date, Constants.PERIOD_UPDATE_DAY);
-    }
-
-    /**
-     * 增加或减少天数
-     */
-    private Date addDay(Date date, int num) {
-        Calendar startDT = Calendar.getInstance();
-        startDT.setTime(date);
-        startDT.add(Calendar.DAY_OF_MONTH, num);
-        return startDT.getTime();
     }
 
 
@@ -568,23 +493,23 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
                         Logger.e("onNext: fr search get result  = " + System.currentTimeMillis() + " trackId = " + requestId + "  similar = " + compareResult.getSimilar());
                         if (compareResult.getSimilar() > SIMILAR_THRESHOLD) {
 
-                                //认证成功 回调请求
-                                String id = mSharedPreferences.getString(compareResult.getUserName(), "");
-                                Map map = new HashMap();
-                                map.put("userId", id);
-                                OkUtils.UploadSJ(Constants.UP_LOAD_URL, map, new Callback() {
-                                    @Override
-                                    public void onFailure(Call call, IOException e) {
-                                        Logger.e("回调失败");
+                            //认证成功 回调请求
+                            String id = mSharedPreferences.getString(compareResult.getUserName(), "");
+                            Map map = new HashMap();
+                            map.put("userId", id);
+                            OkUtils.UploadSJ(Constants.UP_LOAD_URL, map, new Callback() {
+                                @Override
+                                public void onFailure(Call call, IOException e) {
+                                    Logger.e("回调失败");
 
-                                    }
-                                    @Override
-                                    public void onResponse(Call call, Response response) throws IOException {
-                                        Logger.e("回调成功");
-                                        //MotherboardUtil.Succeed();
-                                    }
-                                });
+                                }
 
+                                @Override
+                                public void onResponse(Call call, Response response) throws IOException {
+                                    Logger.e("回调成功");
+                                    //MotherboardUtil.Succeed();
+                                }
+                            });
 
 
                             boolean isAdded = false;
@@ -622,6 +547,7 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
                             faceHelper.addName(requestId, "VISITOR " + requestId);
                         }
                     }
+
                     @Override
                     public void onError(Throwable e) {
                         requestFeatureStatusMap.put(requestId, RequestFeatureStatus.FAILED);
@@ -822,6 +748,7 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
 
     /**
      * 删除文件
+     *
      * @param file 要删除的文件夹的所在位置
      */
     private void deleteFile(File file) {

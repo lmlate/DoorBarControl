@@ -14,6 +14,7 @@ import android.view.TextureView;
 import android.view.View;
 
 import com.huaan.doorbar.application.App;
+import com.huaan.doorbar.common.Constants;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -102,7 +103,7 @@ public class CameraHelper implements Camera.PreviewCallback {
     }
 
 
-    private SharedPreferences mSharedPreferences = App.getInstance().getSharedPreferences("faceDetail", Context.MODE_PRIVATE);
+    private SharedPreferences mSharedPreferences = App.getInstance().getSharedPreferences(Constants.AppSetting, Context.MODE_PRIVATE);
 
     public void start() {
         synchronized (this) {

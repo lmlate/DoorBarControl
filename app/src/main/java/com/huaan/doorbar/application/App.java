@@ -5,6 +5,7 @@ import android.app.Application;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 
 import com.huaan.doorbar.activity.SplashScreenActivity;
 import com.orhanobut.logger.AndroidLogAdapter;
@@ -20,6 +21,8 @@ public class App extends Application implements Thread.UncaughtExceptionHandler 
 
     private static App instance;
     private PendingIntent mIntent;
+    private SharedPreferences mSharedPreferences;
+
 
     @Override
     public void onCreate() {

@@ -6,7 +6,7 @@ import android.content.SharedPreferences;
 import com.arcsoft.face.FaceEngine;
 
 public class ConfigUtil {
-    private static final String APP_NAME = "ArcFaceDemo";
+    private static final String APP_NAME = "AppSetting";
     private static final String TRACK_ID = "trackID";
     private static final String FT_ORIENT = "ftOrient";
 

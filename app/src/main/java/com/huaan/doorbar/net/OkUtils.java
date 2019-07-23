@@ -4,6 +4,8 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import org.json.JSONObject;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -159,25 +161,6 @@ public class OkUtils {
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     /**
      * 键值对上传数据
      **/
@@ -312,13 +295,12 @@ public class OkUtils {
      *
      * @param
      */
-    public static void PostJaon(String url, String json, Callback callback) {
-        RequestBody requestBody = RequestBody.create(JSON, json);
-        Request build = new Request.Builder()
+    public static void PostJson(String url, Map map, Callback callback) {
+        Request request = new Request.Builder()
                 .url(url)
-                .patch(requestBody)
+                .post(RequestBody.create(JSON, new JSONObject(map).toString()))
                 .build();
-        Call call = getInstance().newCall(build);
+        Call call = getInstance().newCall(request);
         call.enqueue(callback);
     }
 

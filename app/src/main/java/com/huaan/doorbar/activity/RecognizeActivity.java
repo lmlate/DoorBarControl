@@ -1,20 +1,21 @@
 package com.huaan.doorbar.activity;
 
 import android.Manifest;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Point;
 import android.hardware.Camera;
-import android.icu.util.Calendar;
 import android.media.MediaScannerConnection;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
@@ -25,10 +26,10 @@ import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.WindowManager;
-import android.widget.SeekBar;
 
 import com.arcsoft.face.AgeInfo;
 import com.arcsoft.face.ErrorInfo;
@@ -38,9 +39,9 @@ import com.arcsoft.face.GenderInfo;
 import com.arcsoft.face.LivenessInfo;
 import com.arcsoft.face.VersionInfo;
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import com.huaan.doorbar.R;
 import com.huaan.doorbar.common.Constants;
+import com.huaan.doorbar.db.DBHelper;
 import com.huaan.doorbar.faceserver.CompareResult;
 import com.huaan.doorbar.faceserver.FaceServer;
 import com.huaan.doorbar.model.DrawInfo;
@@ -61,16 +62,18 @@ import com.huaan.doorbar.widget.FaceRectView;
 import com.huaan.doorbar.widget.ShowFaceInfoAdapter;
 import com.orhanobut.logger.Logger;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+
 import java.io.File;
 import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -91,6 +94,7 @@ import okhttp3.Response;
 @RequiresApi(api = Build.VERSION_CODES.N)
 public class RecognizeActivity extends AppCompatActivity implements ViewTreeObserver.OnGlobalLayoutListener {
 
+    private Context mContext = RecognizeActivity.this;
     /**
      * 最大检测人数
      */
@@ -139,7 +143,13 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
     /**
      * 识别度
      */
-    private static final float SIMILAR_THRESHOLD = Constants.FACE_SIMILAR_THRESHOLD;
+    private float SIMILAR_THRESHOLD;
+    /**
+     * IP,端口号
+     */
+    private String mIp;
+    private String mPort;
+
     /**
      * 所需的所有权限信息
      */
@@ -152,21 +162,16 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
     private SharedPreferences mSharedPreferences;
     private SharedPreferences.Editor mEditor;
 
-    private Context mContext = RecognizeActivity.this;
+    private int mDownLoadImgSize;//应下载的图片数量
+    private int mSucceedCount = 0;//已下载数量
 
     /**
-     * 定时下载
+     * 数据库
      */
-    private Timer mTimer;
+    private DBHelper mHelper;
+    private SQLiteDatabase mDatabase;
 
-    /**
-     * 焦距调节
-     */
-    private SeekBar mSeekBar;
-    private boolean mIsDoIt = false;//隐藏条件
-    //应下载的图片数量
-    private int mDownLoadImgSize;
-
+    private Map<String, String> mPeopleMap = new HashMap<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -182,6 +187,10 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
             getWindow().setAttributes(attributes);
         }
 
+        SIMILAR_THRESHOLD = Constants.getFaceSimilar(this);
+        mIp = Constants.getServerIp(this);
+        mPort = Constants.getServerPort(this);
+
         //初始化主板接口
         MotherboardUtil.init(this);
 
@@ -189,6 +198,10 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
         //本地人脸库初始化
         FaceServer.getInstance().init(this);
+
+        //数据库初始化
+        mHelper = new DBHelper(this);
+        mDatabase = mHelper.getWritableDatabase();
 
         previewView = findViewById(R.id.texture_preview);
         //在布局结束后才做初始化操作
@@ -204,70 +217,17 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
         recyclerShowFaceInfo.setLayoutManager(new LinearLayoutManager(this));
         recyclerShowFaceInfo.setItemAnimator(new DefaultItemAnimator());
 
-//        progressDialog = new ProgressDialog(this);
         mSharedPreferences = getSharedPreferences("faceDetail", Context.MODE_PRIVATE);
-        downLoad();
-        downLoadTask();
 
+//        cameraHelper.setZoom(mSharedPreferences.getInt("focal_length", 0));
 
-        mSeekBar = findViewById(R.id.focal_length);
-        int focal_length = mSharedPreferences.getInt("focal_length", 0);
-        mSeekBar.setProgress(focal_length);
-        mSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                cameraHelper.setZoom(progress);
-                mEditor.putInt("focal_length", progress).apply();
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-                mIsDoIt = true;
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                new Handler().postDelayed(() -> runOnUiThread(() -> mSeekBar.setVisibility(View.INVISIBLE)), Constants.DELAY_ADJUST_FOCUS_TIME);
-            }
-        });
-        new Handler().postDelayed(() -> runOnUiThread(() -> {
-            if (!mIsDoIt) {
-                mSeekBar.setVisibility(View.INVISIBLE);
-            }
-        }), Constants.DELAY_ADJUST_FOCUS_TIME);
-
-    }
-
-    /**
-     * 定时任务
-     */
-    private void downLoadTask() {
-        mTimer = new Timer();
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(Calendar.HOUR_OF_DAY, Constants.UPDATE_TIME_HOUR); //凌晨1点
-        calendar.set(Calendar.MINUTE, Constants.UPDATE_TIME_MINUTE);
-        calendar.set(Calendar.SECOND, Constants.UPDATE_TIME_SECOND);
-        Date date = calendar.getTime();
-        //如果第一次执行定时任务的时间 小于当前的时间，此时添加一天
-        if (date.before(new Date())) {
-            date = this.addDay(date, 1);
+        try {
+            TcpServer tcpServer = new TcpServer();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        mTimer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                runOnUiThread(() -> downLoad());
-            }
-        }, date, Constants.PERIOD_UPDATE_DAY);
-    }
 
-    /**
-     * 增加或减少天数
-     */
-    private Date addDay(Date date, int num) {
-        Calendar startDT = Calendar.getInstance();
-        startDT.setTime(date);
-        startDT.add(Calendar.DAY_OF_MONTH, num);
-        return startDT.getTime();
+            syncFace();
     }
 
 
@@ -275,7 +235,6 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
      * 初始化引擎
      */
     private void initEngine() {
-
         faceEngine = new FaceEngine();
         afCode = faceEngine.init(this, FaceEngine.ASF_DETECT_MODE_VIDEO, ConfigUtil.getFtOrient(this),
                 16, MAX_DETECT_NUM, FaceEngine.ASF_FACE_RECOGNITION | FaceEngine.ASF_FACE_DETECT | FaceEngine.ASF_LIVENESS);
@@ -296,7 +255,6 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
             Logger.i("unInitEngine: " + afCode);
         }
     }
-
 
     @Override
     protected void onDestroy() {
@@ -320,14 +278,9 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
             getFeatureDelayedDisposables.dispose();
             getFeatureDelayedDisposables.clear();
         }
-        //-------------------------------//
         if (executorService != null && !executorService.isShutdown()) {
             executorService.shutdownNow();
         }
-//        if (progressDialog != null && progressDialog.isShowing()) {
-//            progressDialog.dismiss();
-//        }
-        //-------------------------------//
         FaceServer.getInstance().unInit();
         MotherboardUtil.pullDownLight();
         super.onDestroy();
@@ -382,12 +335,9 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
                 //FR 失败
                 else {
                     requestFeatureStatusMap.put(requestId, RequestFeatureStatus.FAILED);
-
                 }
             }
-
         };
-
 
         CameraListener cameraListener = new CameraListener() {
             @Override
@@ -568,23 +518,23 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
                         Logger.e("onNext: fr search get result  = " + System.currentTimeMillis() + " trackId = " + requestId + "  similar = " + compareResult.getSimilar());
                         if (compareResult.getSimilar() > SIMILAR_THRESHOLD) {
 
-                                //认证成功 回调请求
-                                String id = mSharedPreferences.getString(compareResult.getUserName(), "");
-                                Map map = new HashMap();
-                                map.put("userId", id);
-                                OkUtils.UploadSJ(Constants.UP_LOAD_URL, map, new Callback() {
-                                    @Override
-                                    public void onFailure(Call call, IOException e) {
-                                        Logger.e("回调失败");
+                            //认证成功 回调请求
+                            String id = queryData(compareResult.getUserName());
+                            Map map = new HashMap();
+                            map.put("userId", id);
+                            OkUtils.UploadSJ(Constants.getUpLoadUrl(mIp, mPort), map, new Callback() {
+                                @Override
+                                public void onFailure(Call call, IOException e) {
+                                    Logger.e("回调失败");
 
-                                    }
-                                    @Override
-                                    public void onResponse(Call call, Response response) throws IOException {
-                                        Logger.e("回调成功");
-                                        //MotherboardUtil.Succeed();
-                                    }
-                                });
+                                }
 
+                                @Override
+                                public void onResponse(Call call, Response response) throws IOException {
+                                    Logger.e("回调成功");
+                                    MotherboardUtil.Succeed();
+                                }
+                            });
 
 
                             boolean isAdded = false;
@@ -622,6 +572,7 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
                             faceHelper.addName(requestId, "VISITOR " + requestId);
                         }
                     }
+
                     @Override
                     public void onError(Throwable e) {
                         requestFeatureStatusMap.put(requestId, RequestFeatureStatus.FAILED);
@@ -658,68 +609,42 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
      */
     private List<PeopleFaceInfo> mInfoList = new ArrayList<>();
 
-    private void downLoad() {
-        Request request = new Request.Builder().url(Constants.IMG_SEARCH_URL).build();
-        OkUtils.getInstance().newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                runOnUiThread(() -> {
-                    MyToast.showToast(mContext, "网络未连接");
-                    doRegister();
-                });
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                if (response.isSuccessful()) {
-                    String body = response.body().string();
-                    Gson gson = new Gson();
-                    mInfoList = gson.fromJson(body, new TypeToken<List<PeopleFaceInfo>>() {
-                    }.getType());
-                    runOnUiThread(() -> {
-//                        clearLocalPicture();//开始下载前清空本地照片
-                        mEditor = mSharedPreferences.edit();
-                        mDownLoadImgSize = mInfoList.size();
-                        for (int i = 0; i <= mDownLoadImgSize; i++) {
-                            if (mDownLoadImgSize == i) {
-                                new Handler().postDelayed(() -> {
-                                    mEditor.apply();
-                                    clearFaces();
-                                    doRegister();
-                                }, Constants.DELAY_REGISTER_TIME);
-                            } else {
-                                final String faceImage = mInfoList.get(i).getFaceImage();
-                                final String name = mInfoList.get(i).getName();
-                                final String id = mInfoList.get(i).getId();
-                                OkUtils.download(Constants.IMG_DOWNLOAD_URL + faceImage, name + ".jpg", REGISTER_DIR, new OkUtils.OnDownloadListener() {
-                                    @Override
-                                    public void onDownloadSuccess() {
-                                        Logger.e("下载成功" + name);
-                                        mEditor.putString(name, id);
-                                    }
-
-                                    @Override
-                                    public void onDownloading(int progress) {
-//                                            Logger.e("下载中：" + progress);
-                                    }
-
-                                    @Override
-                                    public void onDownloadFailed() {
-                                        Logger.e("下载失败" + name);
-                                    }
-                                });
-                            }
-                        }
-                    });
-                }
-            }
-        });
-
-    }
 
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
-    //    ProgressDialog progressDialog = null;
     private StringBuilder tvNotificationRegisterResult;
+
+    class TcpServer extends Thread {
+        ServerSocket ss;
+
+        public TcpServer() throws IOException {
+            //建立服务端socket服务。并监听一个端口。
+            ss = new ServerSocket(Constants.getSocketPort(mContext));
+            //守护线程
+            this.setDaemon(true);
+            this.start();
+        }
+
+        @Override
+        public void run() {
+            //通过accept方法获取连接过来的客户端对象。
+            while (true) {
+                try {
+                    //accept为阻塞方法  直到有Socket建立连接
+                    Socket s = ss.accept();
+
+                    String ip = s.getInetAddress().getHostAddress();
+                    Logger.e("-------", ip + ".....is connected");
+                    //可以在这里触发人脸同步处理
+                    syncFace();
+
+                    s.close();//关闭客户端.
+                    throw new RuntimeException("Socket未知错误");
+                } catch (Throwable e) {
+                }
+            }
+        }
+    }
+
 
     /**
      * 人脸注册
@@ -737,21 +662,8 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
         final File[] jpgFiles = dir.listFiles((dir1, name) -> name.endsWith(FaceServer.IMG_SUFFIX));
         executorService.execute(() -> {
             final int totalCount = jpgFiles.length;
-            if (totalCount != mDownLoadImgSize) {
-                MyToast.showLongToast(mContext, "已下载数量:" + totalCount + "\n应下载数量:" + mDownLoadImgSize + "\n请联系管理员核对！");
-            }
             int successCount = 0;
-//               runOnUiThread(()->{
-//                   progressDialog.setMaxProgress(totalCount);
-//                   progressDialog.show();
-//               });
             for (int i = 0; i < totalCount; i++) {
-                final int finalI = i;
-//                    runOnUiThread(()->{
-//                        if (progressDialog != null) {
-//                            progressDialog.refreshProgress(finalI);
-//                        }
-//                    });
                 final File jpgFile = jpgFiles[i];
                 Bitmap bitmap = BitmapFactory.decodeFile(jpgFile.getAbsolutePath());
                 if (bitmap == null) {
@@ -785,18 +697,47 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
                 }
             }
             final int finalSuccessCount = successCount;
+
+            List<String> nameList = getFilesAllName(REGISTER_DIR);
+            if (nameList.size() != 0) {
+                insertData(nameList);
+                clearLocalPicture();//清空本地照片
+            }
+
+            if (nameList.size() != 0) {
+                List<String> idList = new ArrayList<>();
+                Map map = new HashMap();
+                Gson gson = new Gson();
+                for (int i = 0; i < nameList.size(); i++) {
+                    String id = mPeopleMap.get(nameList.get(i));
+                    idList.add(id);
+                }
+                String json = gson.toJson(idList);
+                map.put("ids", json);
+                OkUtils.PostJson(Constants.getSyncFinishFaceUrl(mIp, mPort), map, new Callback() {
+                    @Override
+                    public void onFailure(Call call, IOException e) {
+                        Logger.e("更新回调失败");
+                    }
+
+                    @Override
+                    public void onResponse(Call call, Response response) throws IOException {
+                        Logger.e("更新成功回调");
+                    }
+                });
+            }
+
             tvNotificationRegisterResult = new StringBuilder();
             runOnUiThread(() -> {
-//                        progressDialog.dismiss();
                 tvNotificationRegisterResult.append("注册完成，一共：" + totalCount + "张\n成功：" + finalSuccessCount + "张\n失败：" + (totalCount - finalSuccessCount));
-//                        Logger.e(tvNotificationRegisterResult.toString());
-                MyToast.showToast(mContext, tvNotificationRegisterResult.toString());
+//                MyToast.showToast(mContext, tvNotificationRegisterResult.toString());
             });
             Logger.i("注册成功 " + executorService.isShutdown());
         });
         //刷新缓存
         MediaScannerConnection.scanFile(mContext, new String[]{dir.getAbsolutePath()}, null, null);
     }
+
 
     /**
      * 人脸清空
@@ -822,7 +763,6 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
 
     /**
      * 删除文件
-     * @param file 要删除的文件夹的所在位置
      */
     private void deleteFile(File file) {
         if (file.isDirectory()) {
@@ -834,6 +774,152 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
 //            file.delete();//如要保留文件夹，只删除文件，请注释这行
         } else if (file.exists()) {
             file.delete();
+        }
+    }
+
+    /**
+     * 查询数据
+     */
+    public String queryData(String name) {
+        String id = "";
+        Cursor cursor = mDatabase.rawQuery("select * from " + DBHelper.TABLE_NAME + " where " + DBHelper.NAME + " = ?", new String[]{name});
+        while (cursor.moveToNext()) {
+            id = cursor.getString(cursor.getColumnIndex(DBHelper.ID));
+        }
+        return id;
+    }
+
+    /**
+     * 删除数据
+     */
+    public void deleteData(List<String> list) {
+        int size = list.size();
+        for (int i = 0; i < size; i++) {
+            mDatabase.delete(DBHelper.TABLE_NAME, DBHelper.ID + " = ?", new String[]{list.get(i)});
+        }
+        Logger.e("DataBase", "deleteData: " + size);
+    }
+
+    /**
+     * 注册数据
+     */
+    private void insertData(List<String> nameList) {
+        ContentValues values = new ContentValues();
+        for (int i = 0; i < nameList.size(); i++) {
+            String name = nameList.get(i);
+            String id = mPeopleMap.get(name);
+            values.put(DBHelper.NAME, name);
+            values.put(DBHelper.ID, id);
+        }
+//        mDatabase.insert(DBHelper.TABLE_NAME, null, values);
+        mDatabase.insertWithOnConflict(DBHelper.TABLE_NAME, null, values,SQLiteDatabase.CONFLICT_REPLACE);
+    }
+
+    /**
+     * 获取文件名字
+     */
+    public static List<String> getFilesAllName(String path) {
+        File file = new File(path);
+        File[] files = file.listFiles();
+        if (files == null) {
+            Log.e("error", "空目录");
+            return null;
+        }
+        List<String> mList = new ArrayList<>();
+        for (int i = 0; i < files.length; i++) {
+            String str = files[i].getName();
+            mList.add(str.substring(0, str.indexOf(".")));
+        }
+        return mList;
+    }
+
+    /**
+     * 同步人脸照片
+     */
+    private void syncFace() {
+        Request request = new Request.Builder().url(Constants.getSyncFaceUrl(mIp, mPort)).build();
+        OkUtils.getInstance().newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                MyToast.showToast(mContext, "人脸同步失败");
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) {
+                if (response.isSuccessful()) {
+                    String body = null;
+                    try {
+                        body = response.body().string();
+                        try {
+                            JSONArray jsonArray = new JSONArray(body);
+                            mDownLoadImgSize = jsonArray.length();
+                            mInfoList.clear();
+                            for (int i = 0; i < mDownLoadImgSize; i++) {
+                                String info = jsonArray.getString(i);
+                                //烦躁的解析，该死的是字符串"{name=小张, faceInfo=警察.jpg, id=N4n1nbbCGKGrzI0Pg096Q1U01}"
+                                info = info.substring(info.indexOf("{") + 1, info.indexOf("}"));
+                                String[] split = info.split(",");
+                                for (int j = 0; j < split.length; j++) {
+                                    split[j] = split[j].substring(split[j].lastIndexOf("=") + 1).trim();
+                                }
+                                mInfoList.add(new PeopleFaceInfo(split[1], split[0], split[2]));
+                            }
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        runOnUiThread(() -> {
+                            mDownLoadImgSize = mInfoList.size();
+                            mSucceedCount = 0;
+                            mPeopleMap.clear();
+                            for (int i = 0; i < mDownLoadImgSize; i++) {
+                                final String faceImage = mInfoList.get(i).getFaceImage();
+                                final String name = mInfoList.get(i).getName();
+                                final String id = mInfoList.get(i).getId();
+                                mPeopleMap.put(name, id);
+                                OkUtils.download(Constants.getImageDownloadUrl(mIp, mPort) + faceImage, name + ".jpg", REGISTER_DIR, new OkUtils.OnDownloadListener() {
+                                    @Override
+                                    public void onDownloadSuccess() {
+                                        runOnUiThread(() -> {
+                                            Logger.e("下载成功" + name);
+                                            mSucceedCount++;
+                                            if (mSucceedCount == mDownLoadImgSize) {
+                                                doRegister();
+                                            }
+                                        });
+                                    }
+
+                                    @Override
+                                    public void onDownloading(int progress) {
+                                        Logger.e("下载"+name+"中：" + progress);
+                                    }
+
+                                    @Override
+                                    public void onDownloadFailed() {
+                                        Logger.e("下载失败" + name);
+                                        syncFace();//出现下载失败的情况，由于同步更新数量不错，出现问题暂时这样解决
+                                    }
+                                });
+
+                            }
+                        });
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                }
+            }
+        });
+    }
+
+
+    /**
+     * 查询数据
+     */
+    private void queryAllName() {
+        Cursor cursor = mDatabase.query(DBHelper.TABLE_NAME, null, null, null, null, null, null);
+        while (cursor.moveToNext()) {
+            String  name = cursor.getString(cursor.getColumnIndex(DBHelper.NAME));
+            Logger.e(name);
         }
     }
 

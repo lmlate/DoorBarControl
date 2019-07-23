@@ -27,7 +27,7 @@ public class ProgressDialog extends AlertDialog {
         linearLayout.addView(tvProgress);
         setView(linearLayout, 50, 50, 50, 50);
         setCanceledOnTouchOutside(false);
-        setTitle(R.string.registering_please_wait);
+        setTitle("请勿关闭");
     }
 
 
@@ -46,7 +46,7 @@ public class ProgressDialog extends AlertDialog {
             progressBar.setProgress(progress);
         }
         if (tvProgress != null) {
-            tvProgress.setText("progress: " + progress + " / " + max);
+            tvProgress.setText("进度： " + progress + " / " + max);
         }
         if (progress == max) {
             dismiss();

@@ -13,9 +13,10 @@
     <string name="compare_failed">比对失败，错误码为 %d</string>
     <string name="register">注册</string>
     <string name="live_detection">活体检测</string>
-    <string name="registering_please_wait">注册中，请稍等</string>
     <string name="clear_faces">清空人脸库</string>
     <string name="no_face_need_to_delete">无人脸需要删除</string>
     <string name="ok">确认</string>
     <string name="cancel">取消</string>
+    <string name="notification">提示</string>
+    <string name="confirm_delete">确认删除这%d张图片及人脸特征？</string>
 </resources>

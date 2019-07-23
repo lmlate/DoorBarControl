@@ -14,6 +14,7 @@ import android.view.TextureView;
 import android.view.View;
 
 import com.huaan.doorbar.application.App;
+import com.huaan.doorbar.common.Constants;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -89,7 +90,7 @@ public class CameraHelper implements Camera.PreviewCallback {
                 final int MAX = params.getMaxZoom();
                 if (MAX == 0) return;
                 int zoomValue = params.getZoom();
-                Log.e("-----------------","MAX:" + MAX + "   params : " + zoomValue);
+                Log.e("焦距范围","MAX:" + MAX + "   params : " + zoomValue);
 //                zoomValue += 5;
 //                params.setZoom(zoomValue);
                 params.setZoom(focalLength);
@@ -102,7 +103,7 @@ public class CameraHelper implements Camera.PreviewCallback {
     }
 
 
-    private SharedPreferences mSharedPreferences = App.getInstance().getSharedPreferences("faceDetail", Context.MODE_PRIVATE);
+    private SharedPreferences mSharedPreferences = App.getInstance().getSharedPreferences(Constants.SP_NAME, Context.MODE_PRIVATE);
 
     public void start() {
         synchronized (this) {

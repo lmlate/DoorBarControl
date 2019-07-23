@@ -26,6 +26,11 @@ public class MyToast {
             toast.setText(string);
             toast.show();
         }
+        TextView message = toast.getView().findViewById(android.R.id.message);
+        message.setTextColor(Color.WHITE);
+        message.setTextSize(22);
+        toast.setGravity(Gravity.BOTTOM, 0, 200);
+        toast.show();
     }
 
     public static void showToast(Context context, @StringRes int res) {
@@ -36,6 +41,11 @@ public class MyToast {
             toast.setText(res);
             toast.show();
         }
+        TextView message = toast.getView().findViewById(android.R.id.message);
+        message.setTextColor(Color.WHITE);
+        message.setTextSize(22);
+        toast.setGravity(Gravity.BOTTOM, 0, 200);
+        toast.show();
     }
 
     public static void showLongToast(Context context, String string) {
@@ -46,6 +56,11 @@ public class MyToast {
             toast.setText(string);
             toast.show();
         }
+        TextView message = toast.getView().findViewById(android.R.id.message);
+        message.setTextColor(Color.WHITE);
+        message.setTextSize(22);
+        toast.setGravity(Gravity.BOTTOM, 0, 200);
+        toast.show();
     }
 
     public static void showBigToast(Context context, String string) {

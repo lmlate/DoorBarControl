@@ -1,15 +1,357 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:background="@android:color/darker_gray"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
-    <TextView
-        android:text="欢迎使用"
-        android:textSize="50sp"
-        android:gravity="center"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="人脸比对阈值:"
+            android:textSize="22sp" />
+
+        <TextView
+            android:id="@+id/splash_tv_similar"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:textColor="#ff0000"
+            android:textSize="22sp" />
+
+        <EditText
+            android:id="@+id/splash_et_similar"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:inputType="number"
+            android:textSize="22sp" />
+
+        <Button
+            android:id="@+id/splash_btn_similar"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="设置" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="服务器IP地址:"
+            android:textSize="22sp" />
+
+        <TextView
+            android:id="@+id/splash_tv_ip"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:textColor="#ff0000"
+            android:textSize="18sp" />
+
+        <EditText
+            android:id="@+id/splash_et_ip"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:inputType="textUri"
+            android:textSize="22sp" />
+
+        <Button
+            android:id="@+id/splash_btn_ip"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="设置" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="服务器端口号:"
+            android:textSize="22sp" />
+
+        <TextView
+            android:id="@+id/splash_tv_port"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:textColor="#ff0000"
+            android:textSize="18sp" />
+
+        <EditText
+            android:id="@+id/splash_et_port"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:inputType="number"
+            android:textSize="22sp" />
+
+        <Button
+            android:id="@+id/splash_btn_port"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="设置" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="Socket端口号:"
+            android:textSize="22sp" />
+
+        <TextView
+            android:id="@+id/splash_tv_socket_port"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:textColor="#ff0000"
+            android:textSize="18sp" />
+
+        <EditText
+            android:id="@+id/splash_et_socket_port"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:inputType="number"
+            android:textSize="22sp" />
+
+        <Button
+            android:id="@+id/splash_btn_socket_port"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="设置" />
+    </LinearLayout>
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="识别角度:"
+            android:textSize="22sp" />
+
+        <Button
+            android:id="@+id/splash_btn_down_angle"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:layout_marginLeft="100dp"
+            android:layout_weight="0.5"
+            android:text="－" />
+
+        <TextView
+            android:id="@+id/splash_tv_angle"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:inputType="number"
+            android:textSize="22sp" />
+
+        <Button
+            android:id="@+id/splash_btn_up_angle"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginRight="100dp"
+            android:layout_weight="0.5"
+            android:gravity="center"
+            android:text="＋" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="摄像头焦距:"
+            android:textSize="22sp" />
+
+        <Button
+            android:id="@+id/splash_btn_down_focal"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="100dp"
+            android:layout_weight="0.5"
+            android:gravity="center"
+            android:text="－" />
+
+        <TextView
+            android:id="@+id/splash_tv_focal"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:inputType="number"
+            android:textSize="22sp" />
+
+        <Button
+            android:id="@+id/splash_btn_up_focal"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginRight="100dp"
+            android:layout_weight="0.5"
+            android:gravity="center"
+            android:text="＋" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:orientation="vertical">
+
+        <Button
+            android:id="@+id/splash_btn_engine"
+            android:layout_width="400dp"
+            android:layout_height="75dp"
+            android:layout_gravity="center"
+            android:layout_marginTop="30dp"
+            android:text="激活未引擎"
+            android:textSize="30sp" />
+
+        <TextView
+            android:id="@+id/splash_tv_engine"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginTop="10dp"
+            android:gravity="center"
+            android:textColor="#ff0000"
+            android:textSize="20sp" />
+
+        <Button
+
+            android:id="@+id/splash_btn_download"
+            android:layout_width="400dp"
+            android:layout_height="75dp"
+            android:layout_gravity="center"
+            android:layout_marginTop="10dp"
+            android:text="人脸下载"
+            android:textSize="30sp" />
+
+        <TextView
+            android:id="@+id/splash_tv_download"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginTop="10dp"
+            android:gravity="center"
+            android:textColor="#ff0000"
+            android:textSize="20sp" />
+
+        <Button
+            android:id="@+id/splash_btn_register"
+            android:layout_width="400dp"
+            android:layout_height="75dp"
+            android:layout_gravity="center"
+            android:layout_marginTop="10dp"
+            android:text="人脸注册"
+            android:textSize="30sp" />
+
+        <TextView
+            android:id="@+id/splash_tv_register"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginTop="10dp"
+            android:gravity="center"
+            android:textColor="#ff0000"
+            android:textSize="18sp" />
+
+        <Button
+            android:id="@+id/splash_btn_clear"
+            android:layout_width="400dp"
+            android:layout_height="75dp"
+            android:layout_gravity="center"
+            android:layout_marginTop="10dp"
+            android:text="人脸清空"
+            android:textSize="30sp" />
+
+        <Button
+            android:id="@+id/splash_btn_clear_local_picture"
+            android:layout_width="400dp"
+            android:layout_height="75dp"
+            android:layout_gravity="center"
+            android:layout_marginTop="20dp"
+            android:text="删除本地照片"
+            android:textSize="30sp" />
+
+        <Button
+            android:id="@+id/splash_btn_into"
+            android:layout_width="400dp"
+            android:layout_height="75dp"
+            android:layout_gravity="center"
+            android:layout_marginTop="20dp"
+            android:text="保存进入"
+            android:textSize="30sp" />
+
+        <Button
+            android:id="@+id/splash_btn_into_close"
+            android:layout_width="400dp"
+            android:layout_height="75dp"
+            android:layout_gravity="center"
+            android:layout_marginTop="20dp"
+            android:text="保存进入且不显示"
+            android:textSize="30sp" />
+
+    </LinearLayout>
 
 </LinearLayout>

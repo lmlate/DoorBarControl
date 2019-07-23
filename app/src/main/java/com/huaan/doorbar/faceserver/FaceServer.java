@@ -150,6 +150,57 @@ public class FaceServer {
         }
     }
 
+    /**
+     * 删除指定照片,然后广播通知数据库删除「不通知好像也可以」
+     */
+    public boolean clearFacesByName(Context context,String name) {
+        synchronized (this) {
+            if (context == null) {
+                return false;
+            }
+            if (ROOT_PATH == null) {
+                ROOT_PATH = context.getFilesDir().getAbsolutePath();
+            }
+            if (faceRegisterInfoList != null) {
+                faceRegisterInfoList.clear();
+            }
+            File featureFileDir = new File(ROOT_PATH + File.separator + SAVE_FEATURE_DIR);
+            int deletedFeatureCount = 0;
+            if (featureFileDir.exists() && featureFileDir.isDirectory()) {
+                File[] featureFiles = featureFileDir.listFiles();
+                if (featureFiles != null && featureFiles.length > 0) {
+                    for (File featureFile : featureFiles) {
+                        if (featureFile.getName().equals(name)) {
+                            if (featureFile.delete()) {
+                                deletedFeatureCount++;
+                            }
+                        }
+                    }
+                }
+            }
+            int deletedImageCount = 0;
+            File imgFileDir = new File(ROOT_PATH + File.separator + SAVE_IMG_DIR);
+            if (imgFileDir.exists() && imgFileDir.isDirectory()) {
+                File[] imgFiles = imgFileDir.listFiles();
+                if (imgFiles != null && imgFiles.length > 0) {
+                    for (File imgFile : imgFiles) {
+                        String imgName = imgFile.getName().substring(0, imgFile.getName().indexOf("."));
+                        if (imgName.equals(name)) {
+                            if (imgFile.delete()) {
+                                deletedImageCount++;
+                            }
+                        }
+                    }
+                }
+            }
+            if (deletedFeatureCount == 1 & deletedFeatureCount == 1) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
+
     public int clearAllFaces(Context context) {
         synchronized (this) {
             if (context == null) {
@@ -188,6 +239,7 @@ public class FaceServer {
             return deletedFeatureCount > deletedImageCount ? deletedImageCount : deletedFeatureCount;
         }
     }
+
 
     /**
      * 注册人脸

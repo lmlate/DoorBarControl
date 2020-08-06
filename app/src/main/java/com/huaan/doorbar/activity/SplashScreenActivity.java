@@ -4,7 +4,6 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -55,7 +54,12 @@ import com.orhanobut.logger.Logger;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -119,7 +123,7 @@ public class SplashScreenActivity extends AppCompatActivity implements View.OnCl
     private TextView mSplashTvSocketPort;
     private EditText mSplashEtSocketPort;
     private Button mSplashBtnSocketPort;
-
+    private TextView mSplashTvMineIp;
 
     private SharedPreferences mSharedPreferences;
     private SharedPreferences.Editor mEditor;
@@ -189,10 +193,13 @@ public class SplashScreenActivity extends AppCompatActivity implements View.OnCl
         mPort = Constants.getServerPort(this);
         mSplashTvPort.setText(mPort);
         //Socket端口
-        mSplashTvSocketPort.setText(Constants.getServerPort(this));
+        mSplashTvSocketPort.setText(Constants.getSocketPort(this) + "");
+        //本机IP
+        mSplashTvMineIp.setText(getHostIP());
         //摄像头焦距
         int focal_length = mSharedPreferences.getInt("focal_length", 0);
         mSplashTvFocal.setText(focal_length + "");
+
     }
 
     private void setAngelText(int angle) {
@@ -235,9 +242,7 @@ public class SplashScreenActivity extends AppCompatActivity implements View.OnCl
                 .subscribe(new Observer<Integer>() {
                     @Override
                     public void onSubscribe(Disposable d) {
-
                     }
-
                     @Override
                     public void onNext(Integer activeCode) {
                         if (activeCode == ErrorInfo.MOK) {
@@ -248,18 +253,14 @@ public class SplashScreenActivity extends AppCompatActivity implements View.OnCl
                             mSplashTvEngine.setText(getString(R.string.active_failed, activeCode));
                         }
                     }
-
                     @Override
                     public void onError(Throwable e) {
-
                     }
 
                     @Override
                     public void onComplete() {
-
                     }
                 });
-
     }
 
     private boolean checkPermissions(String[] neededPermissions) {
@@ -341,6 +342,7 @@ public class SplashScreenActivity extends AppCompatActivity implements View.OnCl
         mSplashEtSocketPort = findViewById(R.id.splash_et_socket_port);
         mSplashBtnSocketPort = findViewById(R.id.splash_btn_socket_port);
         mSplashBtnSocketPort.setOnClickListener(this);
+        mSplashTvMineIp = findViewById(R.id.splash_tv_mine_ip);
     }
 
     @Override
@@ -461,14 +463,11 @@ public class SplashScreenActivity extends AppCompatActivity implements View.OnCl
                         .setIcon(R.mipmap.ic_launcher)
                         .setTitle("确认对话框")
                         .setMessage("请确认已经设置完毕再点击")
-                        .setPositiveButton("确定", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                mEditor = mSharedPreferences.edit();
-                                mEditor.putBoolean("IsSave", true).apply();
-                                startActivity(new Intent(SplashScreenActivity.this, RecognizeActivity.class));
-                                finish();
-                            }
+                        .setPositiveButton("确定", (dialog, which) -> {
+                            mEditor = mSharedPreferences.edit();
+                            mEditor.putBoolean("IsSave", true).apply();
+                            startActivity(new Intent(SplashScreenActivity.this, RecognizeActivity.class));
+                            finish();
                         })
                         .setNegativeButton("取消", null);
                 builder.show();
@@ -480,7 +479,7 @@ public class SplashScreenActivity extends AppCompatActivity implements View.OnCl
 
 
     private void downLoad() {
-        Request request = new Request.Builder().url(Constants.getImageSearchUrl(mIp, mPort)).build();
+        Request request = new Request.Builder().url(Constants.getSyncFaceUrl(mIp, mPort)).build();
         OkUtils.getInstance().newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
@@ -490,7 +489,7 @@ public class SplashScreenActivity extends AppCompatActivity implements View.OnCl
             }
 
             @Override
-            public void onResponse(Call call, Response response)  {
+            public void onResponse(Call call, Response response) {
                 if (response.isSuccessful()) {
                     String body = null;
                     try {
@@ -509,7 +508,7 @@ public class SplashScreenActivity extends AppCompatActivity implements View.OnCl
                                 final String id = mInfoList.get(i).getId();
                                 mPeopleMap.put(name, id);
                                 runOnUiThread(() -> showDownloadDialog(mDownLoadImgSize));
-                                OkUtils.download(Constants.getImageDownloadUrl(mIp, mPort) + faceImage, name + ".jpg", REGISTER_DIR, new OkUtils.OnDownloadListener() {
+                                OkUtils.download(Constants.getImageDownloadUrl(mIp, mPort) + faceImage, name + faceImage.substring(faceImage.indexOf(".")), REGISTER_DIR, new OkUtils.OnDownloadListener() {
                                     @Override
                                     public void onDownloadSuccess() {
                                         runOnUiThread(() -> {
@@ -538,10 +537,10 @@ public class SplashScreenActivity extends AppCompatActivity implements View.OnCl
 
                                     @Override
                                     public void onDownloading(int progress) {
-                                            Logger.e("下载"+name+"中：" + progress);
-                                            runOnUiThread(()->{
-                                                tvProgress.setText("进度： " + mSucceedCount + " / " + mDownLoadImgSize+"\n"+name+":"+progress+"%");
-                                            });
+                                        Logger.e("下载" + name + "中：" + progress);
+                                        runOnUiThread(() -> {
+                                            tvProgress.setText("进度： " + mSucceedCount + " / " + mDownLoadImgSize + "\n" + name + ":" + progress + "%");
+                                        });
                                     }
 
                                     @Override
@@ -666,6 +665,7 @@ public class SplashScreenActivity extends AppCompatActivity implements View.OnCl
 
     /**
      * 注册数据
+     *
      * @param nameList
      */
     private void insertData(List<String> nameList) {
@@ -673,11 +673,11 @@ public class SplashScreenActivity extends AppCompatActivity implements View.OnCl
         for (int i = 0; i < nameList.size(); i++) {
             String name = nameList.get(i);
             String id = mPeopleMap.get(name);
-            values.put(DBHelper.NAME,name);
+            values.put(DBHelper.NAME, name);
             values.put(DBHelper.ID, id);
         }
 //        mDatabase.insert(DBHelper.TABLE_NAME, null, values);
-        mDatabase.insertWithOnConflict(DBHelper.TABLE_NAME, null, values,SQLiteDatabase.CONFLICT_REPLACE);
+        mDatabase.insertWithOnConflict(DBHelper.TABLE_NAME, null, values, SQLiteDatabase.CONFLICT_REPLACE);
     }
 
     /**
@@ -797,5 +797,31 @@ public class SplashScreenActivity extends AppCompatActivity implements View.OnCl
         FaceServer.getInstance().unInit();
     }
 
+
+    public String getHostIP() {
+        String hostIp = null;
+        try {
+            Enumeration nis = NetworkInterface.getNetworkInterfaces();
+            InetAddress ia = null;
+            while (nis.hasMoreElements()) {
+                NetworkInterface ni = (NetworkInterface) nis.nextElement();
+                Enumeration<InetAddress> ias = ni.getInetAddresses();
+                while (ias.hasMoreElements()) {
+                    ia = ias.nextElement();
+                    if (ia instanceof Inet6Address) {
+                        continue;// skip ipv6
+                    }
+                    String ip = ia.getHostAddress();
+                    if (!"127.0.0.1".equals(ip)) {
+                        hostIp = ia.getHostAddress();
+                        break;
+                    }
+                }
+            }
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
+        return hostIp;
+    }
 
 }

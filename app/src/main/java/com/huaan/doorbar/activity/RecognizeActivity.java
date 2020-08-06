@@ -39,6 +39,7 @@ import com.arcsoft.face.GenderInfo;
 import com.arcsoft.face.LivenessInfo;
 import com.arcsoft.face.VersionInfo;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.huaan.doorbar.R;
 import com.huaan.doorbar.common.Constants;
 import com.huaan.doorbar.db.DBHelper;
@@ -61,9 +62,6 @@ import com.huaan.doorbar.util.other.MyToast;
 import com.huaan.doorbar.widget.FaceRectView;
 import com.huaan.doorbar.widget.ShowFaceInfoAdapter;
 import com.orhanobut.logger.Logger;
-
-import org.json.JSONArray;
-import org.json.JSONException;
 
 import java.io.File;
 import java.io.IOException;
@@ -88,6 +86,7 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 import okhttp3.Call;
 import okhttp3.Callback;
+import okhttp3.HttpUrl;
 import okhttp3.Request;
 import okhttp3.Response;
 
@@ -227,7 +226,7 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
             e.printStackTrace();
         }
 
-            syncFace();
+//            syncFace();
     }
 
 
@@ -258,12 +257,10 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
 
     @Override
     protected void onDestroy() {
-
         if (cameraHelper != null) {
             cameraHelper.release();
             cameraHelper = null;
         }
-
         //faceHelper中可能会有FR耗时操作仍在执行，加锁防止crash
         if (faceHelper != null) {
             synchronized (faceHelper) {
@@ -294,27 +291,23 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
         for (String neededPermission : neededPermissions) {
             allGranted &= ContextCompat.checkSelfPermission(this, neededPermission) == PackageManager.PERMISSION_GRANTED;
         }
-
         return allGranted;
     }
 
     private void initCamera() {
         DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
-
         final FaceListener faceListener = new FaceListener() {
             @Override
             public void onFail(Exception e) {
                 Logger.e("onFail: " + e.getMessage());
             }
-
             //请求FR的回调
             @Override
             public void onFaceFeatureInfoGet(@Nullable final FaceFeature faceFeature, final Integer requestId) {
                 //FR成功
                 if (faceFeature != null) {
                     Logger.i("onPreview: fr end = " + System.currentTimeMillis() + " trackId = " + requestId);
-
                     //活体检测通过，搜索特征
                     if (livenessMap.get(requestId) != null && livenessMap.get(requestId) == LivenessInfo.ALIVE) {
                         searchFace(faceFeature, requestId);
@@ -330,7 +323,6 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
 //                        runOnUiThread(() -> MyToast.showToast(mContext, "未检测到活体"));
 //                        MotherboardUtil.Failure();
                     }
-
                 }
                 //FR 失败
                 else {
@@ -615,7 +607,6 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
 
     class TcpServer extends Thread {
         ServerSocket ss;
-
         public TcpServer() throws IOException {
             //建立服务端socket服务。并监听一个端口。
             ss = new ServerSocket(Constants.getSocketPort(mContext));
@@ -623,7 +614,6 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
             this.setDaemon(true);
             this.start();
         }
-
         @Override
         public void run() {
             //通过accept方法获取连接过来的客户端对象。
@@ -704,28 +694,33 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
                 clearLocalPicture();//清空本地照片
             }
 
-            if (nameList.size() != 0) {
-                List<String> idList = new ArrayList<>();
-                Map map = new HashMap();
-                Gson gson = new Gson();
-                for (int i = 0; i < nameList.size(); i++) {
-                    String id = mPeopleMap.get(nameList.get(i));
-                    idList.add(id);
-                }
-                String json = gson.toJson(idList);
-                map.put("ids", json);
-                OkUtils.PostJson(Constants.getSyncFinishFaceUrl(mIp, mPort), map, new Callback() {
-                    @Override
-                    public void onFailure(Call call, IOException e) {
-                        Logger.e("更新回调失败");
-                    }
+//            if (nameList.size() != 0) {
+//                List<String> idList = new ArrayList<>();
+//                Map map = new HashMap();
+//                Gson gson = new Gson();
+//                for (int i = 0; i < nameList.size(); i++) {
+//                    String id = mPeopleMap.get(nameList.get(i));
+//                    idList.add(id);
+//                }
+//                String json = gson.toJson(idList);
+//                map.put("ids", json);
+//                OkUtils.UploadSJ(Constants.getSyncFinishFaceUrl(mIp, mPort), map, new Callback() {
+//                    @Override
+//                    public void onFailure(Call call, IOException e) {
+//                        Logger.e("更新回调失败");
+//                    }
+//
+//                    @Override
+//                    public void onResponse(Call call, Response response) throws IOException {
+//                        if (response.isSuccessful()) {
+//                            Logger.e("更新成功回调");
+//                        } else {
+//                            Logger.e("更新回调失败");
+//                        }
+//                    }
+//                });
+//            }
 
-                    @Override
-                    public void onResponse(Call call, Response response) throws IOException {
-                        Logger.e("更新成功回调");
-                    }
-                });
-            }
 
             tvNotificationRegisterResult = new StringBuilder();
             runOnUiThread(() -> {
@@ -836,8 +831,10 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
     /**
      * 同步人脸照片
      */
+
     private void syncFace() {
-        Request request = new Request.Builder().url(Constants.getSyncFaceUrl(mIp, mPort)).build();
+        HttpUrl url = HttpUrl.parse(Constants.getSyncFaceUrl(mIp, mPort)).newBuilder().addQueryParameter("updateTime", "1").build();
+        Request request = new Request.Builder().url(url).get().build();
         OkUtils.getInstance().newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
@@ -850,23 +847,10 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
                     String body = null;
                     try {
                         body = response.body().string();
-                        try {
-                            JSONArray jsonArray = new JSONArray(body);
-                            mDownLoadImgSize = jsonArray.length();
-                            mInfoList.clear();
-                            for (int i = 0; i < mDownLoadImgSize; i++) {
-                                String info = jsonArray.getString(i);
-                                //烦躁的解析，该死的是字符串"{name=小张, faceInfo=警察.jpg, id=N4n1nbbCGKGrzI0Pg096Q1U01}"
-                                info = info.substring(info.indexOf("{") + 1, info.indexOf("}"));
-                                String[] split = info.split(",");
-                                for (int j = 0; j < split.length; j++) {
-                                    split[j] = split[j].substring(split[j].lastIndexOf("=") + 1).trim();
-                                }
-                                mInfoList.add(new PeopleFaceInfo(split[1], split[0], split[2]));
-                            }
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
+                        Gson gson = new Gson();
+                        mInfoList.clear();
+                        mInfoList = gson.fromJson(body, new TypeToken<List<PeopleFaceInfo>>() {
+                        }.getType());
                         runOnUiThread(() -> {
                             mDownLoadImgSize = mInfoList.size();
                             mSucceedCount = 0;
@@ -876,7 +860,7 @@ public class RecognizeActivity extends AppCompatActivity implements ViewTreeObse
                                 final String name = mInfoList.get(i).getName();
                                 final String id = mInfoList.get(i).getId();
                                 mPeopleMap.put(name, id);
-                                OkUtils.download(Constants.getImageDownloadUrl(mIp, mPort) + faceImage, name + ".jpg", REGISTER_DIR, new OkUtils.OnDownloadListener() {
+                                OkUtils.download(Constants.getImageDownloadUrl(mIp, mPort) + faceImage, name + faceImage.substring(faceImage.indexOf(".")), REGISTER_DIR, new OkUtils.OnDownloadListener() {
                                     @Override
                                     public void onDownloadSuccess() {
                                         runOnUiThread(() -> {

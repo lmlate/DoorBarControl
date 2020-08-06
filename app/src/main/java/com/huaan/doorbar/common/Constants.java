@@ -8,8 +8,8 @@ public class Constants {
     public static String APP_ID = "CfKVx5snbRFqAkEa7LnHE1n1ba2vAMQm8qcdWbe1crxR";
     public static String SDK_KEY = "3gNoWRNFMSVgiujUJ9T5SRMu2hBPzHhYnwvEQDMtHtKc";
 
-    private static String IP = "10.128.4.152";
-    private static String PORT = "8080";
+    private static String IP = "192.168.1.153";
+    private static String PORT = "8010";
     private static int SOCKET_PORT = 10003;
 
     private static float FACE_SIMILAR_THRESHOLD = 0.75f;//识别度
@@ -23,16 +23,16 @@ public class Constants {
     }
 
     public static String getUpLoadUrl(String ip, String port) {
-        return "http://" + IP + ":" + PORT + "/warehouse/entranceGuard/faceAuthentication";
+        return "http://" + IP + ":" + PORT + "/warehouse/entranceGuard/gateFaceAuthentication";
     }
 
     public static String getSyncFaceUrl(String ip, String PORT) {
-        return "http://"+IP+":"+ PORT+"/warehouse/sync/getFaceInfo";
+        return "http://"+IP+":"+ PORT+"/warehouse/identity/userFaceInfo";
     }
 
-    public static String getSyncFinishFaceUrl(String ip, String PORT) {
-        return "http://"+IP+":"+ PORT+"/warehouse/sync/finishFaceInfo";
-    }
+//    public static String getSyncFinishFaceUrl(String ip, String PORT) {
+//        return "http://"+IP+":"+ PORT+"/warehouse/sync/finishFaceInfo";
+//    }
 
     public static void setFaceSimilar(Context context, float value) {
         if (context == null) {
@@ -91,4 +91,3 @@ public class Constants {
     }
 
 }
-

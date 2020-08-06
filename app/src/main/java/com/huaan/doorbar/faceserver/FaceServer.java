@@ -165,20 +165,20 @@ public class FaceServer {
                 faceRegisterInfoList.clear();
             }
             File featureFileDir = new File(ROOT_PATH + File.separator + SAVE_FEATURE_DIR);
-            int deletedFeatureCount = 0;
+            boolean deletedFeatureCount = false;
             if (featureFileDir.exists() && featureFileDir.isDirectory()) {
                 File[] featureFiles = featureFileDir.listFiles();
                 if (featureFiles != null && featureFiles.length > 0) {
                     for (File featureFile : featureFiles) {
                         if (featureFile.getName().equals(name)) {
                             if (featureFile.delete()) {
-                                deletedFeatureCount++;
+                                deletedFeatureCount=true;
                             }
                         }
                     }
                 }
             }
-            int deletedImageCount = 0;
+            boolean deletedImageCount = false;
             File imgFileDir = new File(ROOT_PATH + File.separator + SAVE_IMG_DIR);
             if (imgFileDir.exists() && imgFileDir.isDirectory()) {
                 File[] imgFiles = imgFileDir.listFiles();
@@ -187,13 +187,13 @@ public class FaceServer {
                         String imgName = imgFile.getName().substring(0, imgFile.getName().indexOf("."));
                         if (imgName.equals(name)) {
                             if (imgFile.delete()) {
-                                deletedImageCount++;
+                                deletedImageCount=true;
                             }
                         }
                     }
                 }
             }
-            if (deletedFeatureCount == 1 & deletedFeatureCount == 1) {
+            if (deletedFeatureCount && deletedImageCount) {
                 return true;
             } else {
                 return false;

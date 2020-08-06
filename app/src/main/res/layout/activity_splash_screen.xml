@@ -169,6 +169,31 @@
             android:text="设置" />
     </LinearLayout>
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_margin="10dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="本机IP:"
+            android:textSize="22sp" />
+
+        <TextView
+            android:id="@+id/splash_tv_mine_ip"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="3"
+            android:gravity="center"
+            android:inputType="number"
+            android:textSize="28sp" />
+
+    </LinearLayout>
+
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -264,10 +289,10 @@
         <Button
             android:id="@+id/splash_btn_engine"
             android:layout_width="400dp"
-            android:layout_height="75dp"
+            android:layout_height="65dp"
             android:layout_gravity="center"
             android:layout_marginTop="30dp"
-            android:text="激活未引擎"
+            android:text="激活引擎"
             android:textSize="30sp" />
 
         <TextView
@@ -283,7 +308,7 @@
 
             android:id="@+id/splash_btn_download"
             android:layout_width="400dp"
-            android:layout_height="75dp"
+            android:layout_height="65dp"
             android:layout_gravity="center"
             android:layout_marginTop="10dp"
             android:text="人脸下载"
@@ -301,7 +326,7 @@
         <Button
             android:id="@+id/splash_btn_register"
             android:layout_width="400dp"
-            android:layout_height="75dp"
+            android:layout_height="65dp"
             android:layout_gravity="center"
             android:layout_marginTop="10dp"
             android:text="人脸注册"
@@ -319,7 +344,7 @@
         <Button
             android:id="@+id/splash_btn_clear"
             android:layout_width="400dp"
-            android:layout_height="75dp"
+            android:layout_height="65dp"
             android:layout_gravity="center"
             android:layout_marginTop="10dp"
             android:text="人脸清空"
@@ -328,7 +353,7 @@
         <Button
             android:id="@+id/splash_btn_clear_local_picture"
             android:layout_width="400dp"
-            android:layout_height="75dp"
+            android:layout_height="65dp"
             android:layout_gravity="center"
             android:layout_marginTop="20dp"
             android:text="删除本地照片"
@@ -337,7 +362,7 @@
         <Button
             android:id="@+id/splash_btn_into"
             android:layout_width="400dp"
-            android:layout_height="75dp"
+            android:layout_height="65dp"
             android:layout_gravity="center"
             android:layout_marginTop="20dp"
             android:text="保存进入"
@@ -346,7 +371,7 @@
         <Button
             android:id="@+id/splash_btn_into_close"
             android:layout_width="400dp"
-            android:layout_height="75dp"
+            android:layout_height="65dp"
             android:layout_gravity="center"
             android:layout_marginTop="20dp"
             android:text="保存进入且不显示"

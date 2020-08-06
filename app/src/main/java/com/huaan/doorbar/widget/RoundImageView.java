@@ -141,6 +141,7 @@ public class RoundImageView extends ImageView {
         Canvas canvas = new Canvas(output);
 
         Paint paint = new Paint();
+
         Rect rect = new Rect(0, 0, scaledSrcBmp.getWidth(),scaledSrcBmp.getHeight());
 
         paint.setAntiAlias(true);
